@@ -14,6 +14,9 @@ public class Game : MonoBehaviour
     [SerializeField]
     Paddle bottomPaddle, topPaddle;
 
+    [SerializeField]
+    LivelyCamera livelyCamera;
+
     [SerializeField, Min(2)]
     int pointsToWin = 3;
 
@@ -27,7 +30,6 @@ public class Game : MonoBehaviour
 
     private void Awake()
     {
-        StartNewGame();
         countdownUntilNewGame = newGameDelay;
     }
 
@@ -96,10 +98,12 @@ public class Game : MonoBehaviour
         float xExtents = arenaExtents.x - ball.Extents;
         if (x < -xExtents)
         {
+            livelyCamera.PushXZ(ball.Velocity);
             ball.BounceX(-xExtents);
         }
         else if (x > xExtents)
         {
+            livelyCamera.PushXZ(ball.Velocity);
             ball.BounceX(xExtents);
         }
     }
@@ -110,15 +114,20 @@ public class Game : MonoBehaviour
         float bounceX = ball.Position.x - ball.Velocity.x * durationAfterBounce;
         BounceXIfNeeded(bounceX);
         bounceX = ball.Position.x - ball.Velocity.x * durationAfterBounce;
+        livelyCamera.PushXZ(ball.Velocity);
         ball.BounceY(boundary);
 
         if (defender.HitBall(bounceX, ball.Extents, out float hitFactor))
         {
             ball.SetXPositionAndSpeed(bounceX, hitFactor, durationAfterBounce);
         }
-        else if (attacker.ScorePoint(pointsToWin))
+        else
         {
-            EndGame();
+            livelyCamera.JostleY();
+            if (attacker.ScorePoint(pointsToWin))
+            {
+                EndGame();
+            }
         }
     }
 

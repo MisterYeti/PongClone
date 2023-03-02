@@ -5,6 +5,11 @@ using UnityEngine;
 
 public class Paddle : MonoBehaviour
 {
+    static readonly int
+        emissionColorId = Shader.PropertyToID("_EmissionColor"),
+        faceColorId = Shader.PropertyToID("_FaceColor"),
+        timeOfLastHitId = Shader.PropertyToID("_TimeOfLastHit");
+
     [SerializeField, Min(0f)]
     float
         minExtents = 4f,
@@ -22,8 +27,20 @@ public class Paddle : MonoBehaviour
     private TextMeshPro scoreText;
     int score;
 
+    [SerializeField]
+    MeshRenderer goalRenderer;
+
+    [SerializeField, ColorUsage(true, true)]
+    Color goalColor = Color.white;
+
+    Material paddleMaterial, goalMaterial, scoreMaterial;
+
     private void Awake()
     {
+        goalMaterial = goalRenderer.material;
+        goalMaterial.SetColor(emissionColorId, goalColor);
+        paddleMaterial = GetComponent<MeshRenderer>().material;
+        scoreMaterial = scoreText.fontMaterial;
         SetScore(0);
     }
 
@@ -46,11 +63,13 @@ public class Paddle : MonoBehaviour
     {
         score = newScore;
         scoreText.SetText("{0}", newScore);
+        scoreMaterial.SetColor(faceColorId, goalColor * (newScore / pointsToWin));
         SetExtents(Mathf.Lerp(maxExtents, minExtents, newScore / (pointsToWin - 1f)));
     }
 
     public bool ScorePoint(int pointsToWin)
     {
+        goalMaterial.SetFloat(timeOfLastHitId, Time.time);
         SetScore(score + 1, pointsToWin);
         return score >= pointsToWin;
     }
@@ -99,6 +118,12 @@ public class Paddle : MonoBehaviour
         hitFactor =
             (ballX - transform.localPosition.x) /
             (extents + ballExtents);
-        return -1f <= hitFactor && hitFactor <= 1f;
+
+        bool success = -1f <= hitFactor && hitFactor <= 1f;
+        if (success)
+        {
+            paddleMaterial.SetFloat(timeOfLastHitId, Time.time);
+        }
+        return success;
     }
 }
